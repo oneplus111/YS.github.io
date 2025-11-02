@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影视解析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 主Font Awesome链接 -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 备用Font Awesome链接 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" media="none" onload="this.media='all';">
+    
+
+<link rel="icon" type="image/png" href="https://www.iqiyi.com/favicon.ico">
+    <script>
+        // Tailwind 配置
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#007aff',
+                        secondary: '#5856d6',
+                        success: '#34c759',
+                        warning: '#ff9500',
+                        danger: '#ff3b30',
+                        light: {
+                            background: '#f5f5f7',
+                            card: '#ffffff',
+                            text: '#1c1c1e',
+                            muted: '#8e8e93'
+                        },
+                        dark: {
+                            background: '#1c1c1e',
+                            card: '#2c2c2e',
+                            text: '#ffffff',
+                            muted: '#636366'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Helvetica Neue"', 'Arial', 'sans-serif']
+                    },
+                    borderRadius: {
+                        'pill': '9999px'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .backdrop-blur-sm { backdrop-filter: blur(8px); }
+            .text-shadow { text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+            .btn-transition { transition: all 0.2s ease; }
+        }
+      /* 自定义鼠标样式 */
+        * {
+            cursor: none !important;
+        }
+    
+    /* 自定义鼠标指针 - 水墨风格 */
+      .custom-cursor {
+        position: fixed;
+        width: 35px;
+        height: 35px;
+        pointer-events: none;
+        z-index: 9999;
+        transition: width 0.2s, height 0.2s, opacity 0.2s, transform 0.1s ease-out;
+        transform: translate(-50%, -50%);
+        overflow: visible;
+      }
+      
+      /* 时间问候提示样式 */
+      .time-greeting {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        padding: 12px 20px;
+        font-size: 16px;
+        font-weight: 500;
+        color: #333;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        z-index: 9998;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+      }
+      
+      .time-greeting.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .time-greeting.hide {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      
+      .time-greeting.dark {
+        background: rgba(28, 28, 30, 0.9);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      
+      /* 不同时段的问候语颜色 */
+      .time-greeting.morning {
+        color: #e67e22;
+        box-shadow: 0 4px 20px rgba(230, 126, 34, 0.2);
+      }
+      
+      .time-greeting.afternoon {
+        color: #3498db;
+        box-shadow: 0 4px 20px rgba(52, 152, 219, 0.2);
+      }
+      
+      .time-greeting.evening {
+        color: #9b59b6;
+        box-shadow: 0 4px 20px rgba(155, 89, 182, 0.2);
+      }
+      
+      .time-greeting.night {
+        color: #34495e;
+        box-shadow: 0 4px 20px rgba(52, 73, 94, 0.2);
+      }
+      
+      .ink-circle {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(80,80,80,0.9) 0%, rgba(40,40,40,0.7) 70%, transparent 100%);
+        filter: blur(1px);
+      }
+      
+      .ink-splash {
+        position: absolute;
+        width: 110%;
+        height: 110%;
+        left: -5%;
+        top: -5%;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,5 C60,15 85,20 90,50 C85,80 60,85 50,95 C40,85 15,80 10,50 C15,20 40,15 50,5 Z' fill='none' stroke='rgba(60,60,60,0.6)' stroke-width='1' /%3E%3C/svg%3E") no-repeat center;
+        background-size: contain;
+        opacity: 0.8;
+        transform-origin: center;
+        animation: inkFloat 5s ease-in-out infinite alternate;
+      }
+      
+      @keyframes inkFloat {
+        0% { transform: scale(1) rotate(0deg); }
+        100% { transform: scale(1.05) rotate(5deg); }
+      }
+    
+    /* 点击动效 - 二次元风格文字效果 */
+      .click-effect {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9997;
+        transform: translate(-50%, -50%);
+        animation: textFloat 2s ease-out forwards;
+      }
+      
+      .anime-text {
+        font-size: 24px;
+        font-weight: bold;
+        color: #ff6b6b;
+        text-shadow:
+          0 0 5px rgba(255, 107, 107, 0.8),
+          0 0 10px rgba(255, 107, 107, 0.6),
+          0 0 15px rgba(255, 107, 107, 0.4),
+          2px 2px 4px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
+        font-family: 'Comic Sans MS', 'Bubblegum Sans', cursive;
+        white-space: nowrap;
+      }
+      
+      .anime-text.love-party {
+        color: #e74c3c;
+        text-shadow:
+          0 0 5px rgba(231, 76, 60, 0.8),
+          0 0 10px rgba(231, 76, 60, 0.6),
+          0 0 15px rgba(231, 76, 60, 0.4),
+          2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      
+      .anime-text.love-country {
+        color: #3498db;
+        text-shadow:
+          0 0 5px rgba(52, 152, 219, 0.8),
+          0 0 10px rgba(52, 152, 219, 0.6),
+          0 0 15px rgba(52, 152, 219, 0.4),
+          2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      
+      .anime-text.love-people {
+        color: #2ecc71;
+        text-shadow:
+          0 0 5px rgba(46, 204, 113, 0.8),
+          0 0 10px rgba(46, 204, 113, 0.6),
+          0 0 15px rgba(46, 204, 113, 0.4),
+          2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+    
+    @keyframes textFloat {
+      0% {
+        transform: scale(0) translate(-50%, -50%);
+        opacity: 0;
+      }
+      20% {
+        transform: scale(1.2) translate(-50%, -50%);
+        opacity: 1;
+      }
+      40% {
+        transform: scale(1) translate(-50%, -50%);
+      }
+      60% {
+        transform: scale(1) translate(-50%, -60%);
+      }
+      80% {
+        transform: scale(1) translate(-50%, -50%);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1) translate(-50%, -70%);
+        opacity: 0;
+      }
+    }
+    
+    /* 可交互元素悬停效果 */
+    button:hover, input:hover, select:hover, a:hover {
+      cursor: none;
+    }
+    
+    /* 文本输入区域特殊处理 - 使用半透明而不是默认文本光标 */
+      input[type="text"]:focus, textarea:focus {
+        cursor: none !important;
+        caret-color: rgba(100,100,100,0.8); /* 修改光标颜色以匹配主题 */
+      }
+  </style>
+  <script>
+    // 自定义鼠标效果 - 移除拖尾
+    document.addEventListener('DOMContentLoaded', function() {
+      // 创建主鼠标元素 - 水墨风格
+      const cursor = document.createElement('div');
+      cursor.classList.add('custom-cursor');
+      
+      // 添加水墨圆圈元素
+      const inkCircle = document.createElement('div');
+      inkCircle.classList.add('ink-circle');
+      cursor.appendChild(inkCircle);
+      
+      // 添加水墨飞溅效果元素
+      const inkSplash = document.createElement('div');
+      inkSplash.classList.add('ink-splash');
+      cursor.appendChild(inkSplash);
+      
+      document.body.appendChild(cursor);
+      
+      // 鼠标移动事件
+      document.addEventListener('mousemove', function(e) {
+        const x = e.clientX;
+        const y = e.clientY;
+        
+        // 更新主鼠标位置
+        requestAnimationFrame(() => {
+          cursor.style.left = x + 'px';
+          cursor.style.top = y + 'px';
+          cursor.style.transform = 'scale(1) translate(-50%, -50%)';
+        });
+      });
+      
+      // 鼠标按下时的缩小效果
+      document.addEventListener('mousedown', function(e) {
+        cursor.style.transform = 'scale(0.8) translate(-50%, -50%)';
+        
+        // 创建点击动效
+        createClickEffect(e.clientX, e.clientY);
+      });
+      
+      // 鼠标释放时恢复
+      document.addEventListener('mouseup', function() {
+        cursor.style.transform = 'scale(1) translate(-50%, -50%)';
+      });
+      
+      // 创建点击动效 - 二次元风格文字效果
+      function createClickEffect(x, y) {
+        // 文字内容数组
+        const texts = [
+          { content: '爱党', className: 'love-party' },
+          { content: '爱国', className: 'love-country' },
+          { content: '爱人民', className: 'love-people' }
+        ];
+        
+        // 随机选择一个文字
+        const randomText = texts[Math.floor(Math.random() * texts.length)];
+        
+        // 创建点击效果容器
+        const clickEffect = document.createElement('div');
+        clickEffect.classList.add('click-effect');
+        clickEffect.style.left = x + 'px';
+        clickEffect.style.top = y + 'px';
+        
+        // 创建文字元素
+        const textElement = document.createElement('div');
+        textElement.classList.add('anime-text', randomText.className);
+        textElement.textContent = randomText.content;
+        
+        // 添加轻微的随机旋转
+        const rotation = (Math.random() - 0.5) * 20;
+        textElement.style.transform = `rotate(${rotation}deg)`;
+        
+        clickEffect.appendChild(textElement);
+        document.body.appendChild(clickEffect);
+        
+        // 动画结束后移除元素
+        setTimeout(() => {
+          clickEffect.remove();
+        }, 2000);
+      }
+      
+      // 鼠标悬停在可交互元素上时的效果 - 水墨风格
+      const interactiveElements = document.querySelectorAll('button, input, select, a');
+      
+      interactiveElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+          cursor.style.width = '45px';
+          cursor.style.height = '45px';
+          
+          // 强化水墨效果
+          const inkSplash = cursor.querySelector('.ink-splash');
+          if (inkSplash) {
+            inkSplash.style.opacity = '1';
+            inkSplash.style.animation = 'none';
+            inkSplash.style.transform = 'scale(1.1) rotate(' + (Math.random() * 10 - 5) + 'deg)';
+            setTimeout(() => {
+              inkSplash.style.animation = 'inkFloat 3s ease-in-out infinite alternate';
+            }, 100);
+          }
+        });
+        
+        element.addEventListener('mouseleave', function() {
+          cursor.style.width = '35px';
+          cursor.style.height = '35px';
+          
+          // 恢复水墨效果
+          const inkSplash = cursor.querySelector('.ink-splash');
+          if (inkSplash) {
+            inkSplash.style.opacity = '0.8';
+            inkSplash.style.animation = 'inkFloat 5s ease-in-out infinite alternate';
+          }
+        });
+      });
+      
+      // 鼠标离开窗口时隐藏
+      document.addEventListener('mouseleave', function() {
+        cursor.style.opacity = '0';
+      });
+      
+      // 鼠标进入窗口时显示
+      document.addEventListener('mouseenter', function() {
+        cursor.style.opacity = '1';
+      });
+      
+      // 文本输入区域特殊处理 - 水墨风格
+      const textInputs = document.querySelectorAll('input[type="text"], textarea');
+      
+      textInputs.forEach(input => {
+        input.addEventListener('focus', function() {
+          cursor.style.opacity = '0.6'; // 略微提高透明度，确保可见性
+          
+          // 水墨效果调整
+          const inkCircle = cursor.querySelector('.ink-circle');
+          if (inkCircle) {
+            inkCircle.style.background = 'radial-gradient(circle, rgba(80,80,80,0.6) 0%, rgba(40,40,40,0.4) 70%, transparent 100%)';
+          }
+        });
+        
+        input.addEventListener('blur', function() {
+          cursor.style.opacity = '1';
+          
+          // 恢复水墨效果
+          const inkCircle = cursor.querySelector('.ink-circle');
+          if (inkCircle) {
+            inkCircle.style.background = 'radial-gradient(circle, rgba(80,80,80,0.9) 0%, rgba(40,40,40,0.7) 70%, transparent 100%)';
+          }
+        });
+        
+        // 额外添加鼠标进入/离开事件以确保一致性
+        input.addEventListener('mouseenter', function() {
+          cursor.style.width = '45px';
+          cursor.style.height = '45px';
+          
+          const inkSplash = cursor.querySelector('.ink-splash');
+          if (inkSplash) {
+            inkSplash.style.opacity = '1';
+          }
+        });
+        
+        input.addEventListener('mouseleave', function() {
+          cursor.style.width = '35px';
+          cursor.style.height = '35px';
+          
+          const inkSplash = cursor.querySelector('.ink-splash');
+          if (inkSplash) {
+            inkSplash.style.opacity = '0.8';
+          }
+        });
+      });
+      
+      // 确保在页面加载完成后立即隐藏默认鼠标
+      window.addEventListener('load', function() {
+        document.body.style.cursor = 'none !important';
+      });
+    });
+  </script>
+  <script>
+    // 实时时间显示功能 - 现代风格
+      function updateClock() {
+        const now = new Date();
+        
+        // 格式化时间
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        
+        // 现代风格时间显示（使用HTML结构添加闪烁动画）
+        const timeHtml = `${hours}<span class="time-colon">:</span>${minutes}<span class="time-colon">:</span>${seconds}`;
+        
+        // 格式化日期（现代风格使用中文格式）
+        const year = now.getFullYear();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const weekday = `星期${weekdays[now.getDay()]}`;
+        const dateString = `${year}年${month}月${day}日 ${weekday}`;
+        
+        // 更新DOM
+        const timeElement = document.getElementById('current-time');
+        const dateElement = document.getElementById('current-date');
+        
+        if (timeElement) {
+          timeElement.innerHTML = timeHtml;
+        }
+        
+        if (dateElement) {
+          dateElement.textContent = dateString;
+        }
+      }
+      
+      // 页面加载后立即更新一次时间
+      document.addEventListener('DOMContentLoaded', function() {
+        updateClock();
+        // 每秒更新一次时间
+        setInterval(updateClock, 1000);
+        
+        // 清除历史记录以测试问候功能（实际使用时可移除）
+        localStorage.removeItem('lastGreetingTime');
+        
+        // 显示时间问候提示
+        showTimeGreeting();
+      });
+      
+      // 根据时间显示问候提示
+      function showTimeGreeting(forceShow = false) {
+        const now = new Date(); // 移到函数开头，确保整个函数可以访问
+        
+        // 检查本地存储，避免重复显示（除非强制显示）
+        if (!forceShow) {
+          const lastGreetingTime = localStorage.getItem('lastGreetingTime');
+          const today = now.toDateString();
+          
+          // 如果今天已经显示过问候，则不再显示
+          if (lastGreetingTime === today) {
+            return;
+          }
+        }
+        
+        // 创建问候元素
+        const greetingElement = document.createElement('div');
+        greetingElement.classList.add('time-greeting');
+        
+        // 根据当前时间获取问候语
+        const hour = now.getHours();
+        let greeting = '';
+        let timePeriod = '';
+        
+        if (hour >= 5 && hour < 12) {
+          greeting = '早上好！新的一天，加油！';
+          timePeriod = 'morning';
+        } else if (hour >= 12 && hour < 18) {
+          greeting = '下午好！继续努力！';
+          timePeriod = 'afternoon';
+        } else if (hour >= 18 && hour < 22) {
+          greeting = '晚上好！一天辛苦了！';
+          timePeriod = 'evening';
+        } else {
+          greeting = '夜深了，注意休息！';
+          timePeriod = 'night';
+        }
+        
+        // 设置问候内容
+        greetingElement.textContent = greeting;
+        greetingElement.classList.add(timePeriod);
+        
+        // 检查是否为深色模式
+        if (document.documentElement.classList.contains('dark')) {
+          greetingElement.classList.add('dark');
+        }
+        
+        // 添加到页面
+        document.body.appendChild(greetingElement);
+        
+        // 显示动画
+        setTimeout(() => {
+          greetingElement.classList.add('show');
+        }, 100);
+        
+        // 3秒后开始淡出
+        setTimeout(() => {
+          greetingElement.classList.remove('show');
+          greetingElement.classList.add('hide');
+          
+          // 淡出动画结束后移除元素
+          setTimeout(() => {
+            greetingElement.remove();
+          }, 500);
+        }, 5000);
+        
+        // 如果不是强制显示，则记录今天已显示问候
+        if (!forceShow) {
+          const now = new Date();
+          const today = now.toDateString();
+          localStorage.setItem('lastGreetingTime', today);
+        }
+      }
+      
+      // 添加测试问候的快捷键和隐藏按钮
+      document.addEventListener('keydown', function(e) {
+        // 按G键显示问候（可用于测试）
+        if (e.key === 'g' && e.ctrlKey) {
+          e.preventDefault();
+          showTimeGreeting(true); // 强制显示问候
+        }
+      });
+      
+      // 移除测试问候功能
+  </script>
+  <style>
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            transition: background-image 0.5s ease-in-out;
+        }
+        
+        .bg-gradient-overlay {
+            background: linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(255,255,255,0.9));
+        }
+        
+        .bg-gradient-overlay.dark {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9));
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .glass-effect.dark {
+            background: rgba(28, 28, 30, 0.7);
+        }
+        
+        /* 现代风格时间显示 */
+        .modern-time {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .modern-date {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-weight: 400;
+            color: var(--tw-text-opacity);
+            opacity: 0.8;
+        }
+        
+        .time-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 16px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .dark .time-container {
+            background: rgba(28, 28, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 现代风格的冒号闪烁动画 */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .time-colon {
+            animation: blink 2s infinite;
+        }
+        
+        /* 像素风格动画 */
+        @keyframes pixelBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* 标题呼吸效果 */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* 标题霓虹效果 */
+        @keyframes neonPulse {
+            0%, 100% { text-shadow: 0 0 5px rgba(0, 122, 255, 0.7), 0 0 10px rgba(0, 122, 255, 0.5), 0 0 15px rgba(0, 122, 255, 0.3); }
+            50% { text-shadow: 0 0 10px rgba(88, 86, 214, 0.7), 0 0 20px rgba(88, 86, 214, 0.5), 0 0 30px rgba(88, 86, 214, 0.3); }
+        }
+        
+
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 122, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 122, 255, 0.5);
+        }
+    </style>
+
+</head>
+<body class="font-sans transition-colors duration-300">
+    <!-- 背景图片容器 -->
+    <div id="background-container" class="fixed inset-0 z-0"></div>
+    
+    <!-- 渐变遮罩 -->
+    <div id="gradient-overlay" class="bg-gradient-overlay fixed inset-0 z-10"></div>
+    
+    <!-- 主应用容器 -->
+    <div id="app-container" class="relative z-20 min-h-screen flex flex-col items-center justify-center p-4">
+        <!-- 应用卡片 -->
+        <div id="app-card" class="glass-effect rounded-2xl shadow-lg w-full max-w-2xl p-6 md:p-8 animate-fadeIn">
+            <!-- 顶部控制区 -->
+            <div class="flex items-center justify-between mb-6">
+                <!-- 用户信息/登录按钮 -->
+                <div id="user-info" class="flex items-center space-x-2 hidden">
+                    <i class="fa fa-user-circle text-primary"></i>
+                    <span id="username-display" class="text-sm font-medium"></span>
+                    <button id="logout-button" class="text-xs text-primary hover:underline">退出</button>
+                </div>
+
+                    
+                </button>
+                
+                <!-- 主题切换按钮 -->
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-opacity-10 hover:bg-black dark:hover:bg-white transition-all">
+                    <i class="fa fa-moon-o dark:hidden text-gray-600"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-300"></i>
+                </button>
+            </div>
+            
+            <!-- 标题 -->
+            <div class="text-center mb-4">
+                <h1 class="text-[clamp(1.5rem,4vw,2.5rem)] font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent inline-block animate-[breathe_3s_ease-in-out_infinite,neonPulse_2s_ease-in-out_infinite]">
+                    aZy
+                </h1>
+            </div>
+            
+            <!-- 实时时间显示 - 现代风格 -->
+            <div id="clock-container" class="text-center mb-8">
+                <div class="time-container">
+                    <div id="current-time" class="modern-time text-[clamp(1.5rem,5vw,3rem)] text-primary dark:text-yellow-400">
+                        00:00:00
+                    </div>
+                </div>
+                <div id="current-date" class="modern-date text-text dark:text-white mt-3">
+                    2023年01月01日 星期日
+                </div>
+            </div>
+            
+            <!-- 主要功能区 -->
+            <form id="parse-form" class="space-y-6">
+                <!-- URL输入 -->
+                <div class="space-y-2">
+                    <label for="url-input" class="block text-sm font-medium text-muted dark:text-gray-400">
+                        视频链接
+                    </label>
+                    <input 
+                        type="text" 
+                        id="url-input" 
+                        class="w-full px-4 py-3 rounded-pill border border-transparent focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 bg-white dark:bg-gray-800 text-text dark:text-white transition-all outline-none"
+                        placeholder="请输入要解析的视频链接..."
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <!-- 接口选择 -->
+                <div class="space-y-2">
+                    <label for="interface-select" class="block text-sm font-medium text-muted dark:text-gray-400">
+                        选择接口
+                    </label>
+                    <select 
+                        id="interface-select" 
+                        class="w-full px-4 py-3 rounded-pill border border-transparent focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20 bg-white dark:bg-gray-800 text-text dark:text-white transition-all outline-none appearance-none"
+                    >
+                        <option value="1" data-name="MMKV">MMKV (支持主流视频平台)</option>
+                        <option value="2" data-name="XMFLV">XMFLV (支持国内外多种视频平台)</option>
+                        <option value="3" data-name="PlayerJY">PlayerJY (支持各大视频网站)</option>
+                        <option value="4" data-name="AIDOUER">AIDOUER (支持多种视频平台解析)</option>
+                    </select>
+                </div>
+                
+                <!-- 按钮组 -->
+                <div class="flex flex-wrap justify-center gap-4 pt-2">
+                    <button 
+                        type="submit" 
+                        id="parse-button" 
+                        class="px-6 py-3 rounded-pill bg-primary text-white font-medium hover:bg-primary/90 active:bg-primary/80 transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    >
+                        <i class="fa fa-play-circle mr-2"></i>解析并播放
+                    </button>
+                    <button 
+                        type="button" 
+                        id="clear-button" 
+                        class="px-6 py-3 rounded-pill bg-gray-200 dark:bg-gray-700 text-text dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    >
+                        <i class="fa fa-refresh mr-2"></i>清空
+                    </button>
+                    <button 
+                        type="button" 
+                        id="history-button" 
+                        class="px-6 py-3 rounded-pill bg-gray-200 dark:bg-gray-700 text-text dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    >
+                        <i class="fa fa-history mr-2"></i>历史记录
+                    </button>
+
+                    <button 
+                        type="button" 
+                        id="refresh-bg-button" 
+                        class="px-6 py-3 rounded-pill bg-gray-200 dark:bg-gray-700 text-text dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500 transition-all focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                    >
+                        <i class="fa fa-image mr-2"></i>刷新背景
+                    </button>
+                </div>
+                
+                <!-- 状态标签 -->
+                <div class="text-center">
+                    <span id="status-label" class="text-sm text-muted dark:text-gray-400">
+                        就绪
+                    </span>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 支持的平台展示 -->
+        <div class="mt-8 text-center text-sm text-muted dark:text-gray-400 animate-fadeIn">
+            <p>支持平台: 优酷、爱奇艺、腾讯视频、哔哩哔哩、芒果TV、抖音、快手、YouTube、Netflix 等</p>
+        </div>
+    </div>
+    
+    <!-- 历史记录模态框 -->
+    <div id="history-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="relative glass-effect rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] animate-fadeIn">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-text dark:text-white">解析历史</h2>
+                    <button id="close-history" class="p-2 text-muted dark:text-gray-400 hover:text-text dark:hover:text-white transition-colors">
+                        <i class="fa fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-auto max-h-[calc(80vh-180px)]">
+                <table class="w-full">
+                    <thead class="bg-gray-100 dark:bg-gray-800 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted dark:text-gray-400 uppercase tracking-wider">时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted dark:text-gray-400 uppercase tracking-wider">平台</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted dark:text-gray-400 uppercase tracking-wider">使用接口</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-muted dark:text-gray-400 uppercase tracking-wider">链接</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-muted dark:text-gray-400 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <!-- 历史记录将通过JavaScript动态添加 -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-muted dark:text-gray-400">暂无历史记录</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button id="clear-history" class="px-5 py-2 rounded-pill bg-gray-200 dark:bg-gray-700 text-text dark:text-white font-medium hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500 transition-all focus:outline-none">
+                    清空历史记录
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 播放模态框 -->
+    <div id="player-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-80 backdrop-blur-sm"></div>
+        <div class="relative w-full max-w-6xl max-h-[90vh] animate-fadeIn">
+            <div class="absolute -top-16 right-0">
+                <button id="close-player" class="p-2 text-white hover:text-gray-300 transition-colors">
+                    <i class="fa fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="bg-black rounded-lg overflow-hidden">
+                <iframe 
+                    id="video-player" 
+                    src="" 
+                    class="w-full aspect-video" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                ></iframe>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载提示 -->
+    <div id="loading-indicator" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="relative glass-effect rounded-2xl p-8 flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+            <p id="loading-text" class="text-text dark:text-white font-medium">正在解析视频...</p>
+        </div>
+    </div>
+    
+    <script>
+        // 全局配置
+        const CONFIG = {
+            interfaces: {
+                "1": {"name": "MMKV", "url": "https://jx.mmkv.cn/tv.php?url="},
+                "2": {"name": "XMFLV", "url": "https://jx.xmflv.com/?url="},
+                "3": {"name": "PlayerJY", "url": "https://jx.playerjy.com/?url="},
+                "4": {"name": "AIDOUER", "url": "https://jx.789jiexi.net:4433/?url="}
+            },
+            platforms: {
+                'youku': ['优酷', ['youku.com']],
+                'iqiyi': ['爱奇艺', ['iqiyi.com']],
+                'tencent': ['腾讯视频', ['v.qq.com', 'qq.com']],
+                'bilibili': ['哔哩哔哩', ['bilibili.com', 'b23.tv']],
+                'mgtv': ['芒果TV', ['mgtv.com']],
+                'sohu': ['搜狐视频', ['tv.sohu.com']],
+                'pptv': ['PPTV', ['pptv.com']],
+                'le': ['乐视视频', ['le.com']],
+                '1905': ['1905电影网', ['1905.com']],
+                'douyin': ['抖音', ['douyin.com', 'iesdouyin.com', 'v.douyin.com']],
+                'kuaishou': ['快手', ['kuaishou.com', 'v.kuaishou.com']],
+                'youtube': ['YouTube', ['youtube.com', 'youtu.be']],
+                'netflix': ['Netflix', ['netflix.com']],
+                'disney': ['Disney+', ['disneyplus.com', 'disney.com']],
+                'hbo': ['HBO Max', ['hbomax.com']],
+                'amazon': ['Amazon Prime', ['amazon.com', 'primevideo.com']],
+                'microsoft': ['Microsoft Movies & TV', ['movies.microsoft.com']],
+                'apple': ['Apple TV+', ['tv.apple.com']],
+                'hulu': ['Hulu', ['hulu.com']],
+                'crunchyroll': ['Crunchyroll', ['crunchyroll.com']],
+                'dailymotion': ['Dailymotion', ['dailymotion.com']],
+                'facebook': ['Facebook Watch', ['facebook.com']],
+                'instagram': ['Instagram', ['instagram.com']],
+                'twitter': ['Twitter', ['twitter.com', 'x.com']],
+                'tiktok': ['TikTok', ['tiktok.com']],
+                'netease': ['网易视频', ['v.163.com']],
+                'sina': ['新浪视频', ['video.sina.com.cn']],
+                'xiaomi': ['小米视频', ['video.xiaomi.com']]
+            },
+            bgImageBaseUrl: "https://t.alcy.cc/pc",
+            historyLimit: 20
+        };
+        
+        // DOM元素
+        const elements = {
+            // 主应用元素
+            appContainer: document.getElementById('app-container'),
+            appCard: document.getElementById('app-card'),
+            gradientOverlay: document.getElementById('gradient-overlay'),
+            backgroundContainer: document.getElementById('background-container'),
+            urlInput: document.getElementById('url-input'),
+            interfaceSelect: document.getElementById('interface-select'),
+            parseForm: document.getElementById('parse-form'),
+            parseButton: document.getElementById('parse-button'),
+            clearButton: document.getElementById('clear-button'),
+            historyButton: document.getElementById('history-button'),
+            refreshBgButton: document.getElementById('refresh-bg-button'),
+            statusLabel: document.getElementById('status-label'),
+            themeToggle: document.getElementById('theme-toggle'),
+            
+            // 历史记录模态框
+            historyModal: document.getElementById('history-modal'),
+            historyTableBody: document.getElementById('history-table-body'),
+            closeHistory: document.getElementById('close-history'),
+            clearHistory: document.getElementById('clear-history'),
+            
+            // 播放器模态框
+            playerModal: document.getElementById('player-modal'),
+            videoPlayer: document.getElementById('video-player'),
+            closePlayer: document.getElementById('close-player'),
+            
+            // 加载指示器
+            loadingIndicator: document.getElementById('loading-indicator'),
+            loadingText: document.getElementById('loading-text')
+        };
+        
+
+        
+        // 应用状态
+        let appState = {
+            history: [],
+            isDarkMode: false
+        };
+        
+        // 初始化应用
+        function initApp() {
+            // 加载历史记录
+            loadHistory();
+            
+            // 检测暗色模式
+            detectDarkMode();
+            
+            // 初始化背景图片
+            loadBackgroundImage();
+            
+            // 绑定事件监听器
+            bindEventListeners();
+            
+            // 设置快捷键
+            setupKeyboardShortcuts();
+            
+            // 更新当前时间
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // 显示时间问候语
+            showTimeGreeting();
+        }
+        
+        // 检测暗色模式
+        function detectDarkMode() {
+            appState.isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            updateTheme();
+            
+            // 监听暗色模式变化
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                appState.isDarkMode = e.matches;
+                updateTheme();
+            });
+        }
+        
+        // 更新主题
+        function updateTheme() {
+            if (appState.isDarkMode) {
+                document.documentElement.classList.add('dark');
+                elements.gradientOverlay.classList.add('dark');
+                elements.appCard.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                elements.gradientOverlay.classList.remove('dark');
+                elements.appCard.classList.remove('dark');
+            }
+        }
+        
+        // 加载背景图片
+        function loadBackgroundImage() {
+            const timestamp = Date.now() + Math.floor(Math.random() * 100000);
+            const urlWithCacheBuster = `${CONFIG.bgImageBaseUrl}?t=${timestamp}&r=${Math.random()}`;
+            
+            // 创建图片对象预加载
+            const img = new Image();
+            img.onload = function() {
+                elements.backgroundContainer.style.backgroundImage = `url('${urlWithCacheBuster}')`;
+                elements.backgroundContainer.style.backgroundSize = 'cover';
+                elements.backgroundContainer.style.backgroundPosition = 'center';
+                elements.backgroundContainer.style.backgroundAttachment = 'fixed';
+            };
+            img.onerror = function() {
+                console.error('Failed to load background image');
+                // 设置默认纯色背景
+                elements.backgroundContainer.style.backgroundImage = '';
+                elements.backgroundContainer.style.backgroundColor = appState.isDarkMode ? '#1c1c1e' : '#f5f5f7';
+            };
+            img.src = urlWithCacheBuster;
+        }
+        
+        // 加载历史记录
+        function loadHistory() {
+            try {
+                const savedHistory = localStorage.getItem('videoParserHistory');
+                if (savedHistory) {
+                    appState.history = JSON.parse(savedHistory);
+                    updateHistoryTable();
+                }
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                appState.history = [];
+            }
+        }
+        
+        // 保存历史记录
+        function saveHistory() {
+            try {
+                // 只保存最近的记录
+                const trimmedHistory = appState.history.slice(0, CONFIG.historyLimit);
+                localStorage.setItem('videoParserHistory', JSON.stringify(trimmedHistory));
+            } catch (error) {
+                console.error('Failed to save history:', error);
+            }
+        }
+        
+        // 添加到历史记录
+        function addToHistory(url, platform, interfaceName) {
+            const timestamp = new Date().toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            const userId = appState.currentUser || 'guest';
+            
+            // 检查是否已存在相同的记录，如果存在则移除旧记录
+            const existingIndex = appState.history.findIndex(
+                item => item.url === url && item.interface === interfaceName && item.userId === userId
+            );
+            
+            if (existingIndex !== -1) {
+                appState.history.splice(existingIndex, 1);
+            }
+            
+            // 添加新记录到开头
+            appState.history.unshift({
+                url,
+                platform,
+                interface: interfaceName,
+                timestamp,
+                userId
+            });
+            
+            // 保存历史记录
+            saveHistory();
+            
+            // 更新历史记录表格
+            updateHistoryTable();
+        }
+        
+        // 更新历史记录表格
+        function updateHistoryTable() {
+            const tableBody = elements.historyTableBody;
+            tableBody.innerHTML = '';
+            
+            // 过滤当前用户的历史记录
+            const userId = appState.currentUser || 'guest';
+            const userHistory = appState.history.filter(item => item.userId === userId);
+            
+            if (userHistory.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="5" class="px-6 py-12 text-center text-muted dark:text-gray-400">暂无历史记录</td>';
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+            
+            userHistory.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors';
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-text dark:text-white">${item.timestamp}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">${item.platform}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-text dark:text-white">${item.interface}</td>
+                    <td class="px-6 py-4 text-sm text-text dark:text-white max-w-xs truncate">${item.url}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-primary hover:text-primary/80 mr-3 reuse-btn" data-url="${item.url}" data-interface="${item.interface}">
+                            <i class="fa fa-refresh mr-1"></i>重用
+                        </button>
+                        <button class="text-muted hover:text-danger dark:text-gray-400 dark:hover:text-danger delete-btn" data-url="${item.url}">
+                            <i class="fa fa-trash mr-1"></i>删除
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // 绑定行内按钮事件
+            document.querySelectorAll('.reuse-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    const interfaceName = this.getAttribute('data-interface');
+                    elements.urlInput.value = url;
+                    
+                    // 选择对应的接口
+                    Array.from(elements.interfaceSelect.options).forEach(option => {
+                        if (option.getAttribute('data-name') === interfaceName) {
+                            option.selected = true;
+                        }
+                    });
+                    
+                    elements.historyModal.classList.add('hidden');
+                    elements.urlInput.focus();
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const urlToDelete = this.getAttribute('data-url');
+                    const userId = appState.currentUser || 'guest';
+                    appState.history = appState.history.filter(item => 
+                        !(item.url === urlToDelete && item.userId === userId)
+                    );
+                    saveHistory();
+                    updateHistoryTable();
+                });
+            });
+        }
+        
+        // 重用历史记录项
+        function reuseHistoryItem(index) {
+            if (index >= 0 && index < appState.history.length) {
+                const item = appState.history[index];
+                elements.urlInput.value = item.url;
+                
+                // 选择对应的接口
+                Array.from(elements.interfaceSelect.options).forEach(option => {
+                    if (option.getAttribute('data-name') === item.interface) {
+                        option.selected = true;
+                    }
+                });
+                
+                elements.historyModal.classList.add('hidden');
+                elements.urlInput.focus();
+            }
+        }
+        
+        // 删除历史记录项 - 保留兼容性函数
+        function deleteHistoryItem(index) {
+            if (index >= 0 && index < appState.history.length) {
+                appState.history.splice(index, 1);
+                saveHistory();
+                updateHistoryTable();
+            }
+        }
+        
+        // 清空历史记录
+        function clearAllHistory() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                appState.history = [];
+                saveHistory();
+                updateHistoryTable();
+            }
+        }
+        
+        // 解析URL并识别平台
+        function parseUrlPlatform(url) {
+            const urlLower = url.toLowerCase();
+            
+            for (const [key, [name, domains]] of Object.entries(CONFIG.platforms)) {
+                for (const domain of domains) {
+                    if (urlLower.includes(domain)) {
+                        return name;
+                    }
+                }
+            }
+            
+            return '未知平台';
+        }
+        
+        // 验证URL是否有效
+        function isValidUrl(url) {
+            // 常见的URL格式正则表达式
+            const urlPattern = /^(?:http|ftp)s?:\/\/(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|localhost|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:\/?|[\/?]\S+)$/i;
+            
+            // 如果URL没有协议头，尝试添加http://后再验证
+            if (!/^(?:http|ftp)s?:\/\//i.test(url)) {
+                const testUrl = 'http://' + url;
+                return urlPattern.test(testUrl);
+            }
+            
+            return urlPattern.test(url);
+        }
+        
+        // 解析并播放视频
+        function parseAndPlay(url, interfaceId) {
+            if (!url || !isValidUrl(url)) {
+                showStatus('请输入有效的视频链接', 'error');
+                return;
+            }
+            
+            // 显示加载指示器
+            showLoading('正在解析视频...');
+            
+            // 获取选中的接口
+            const interfaceData = CONFIG.interfaces[interfaceId];
+            
+            if (!interfaceData) {
+                hideLoading();
+                showStatus('无效的解析接口', 'error');
+                return;
+            }
+            
+            // 解析平台
+            const platform = parseUrlPlatform(url);
+            
+            // 构建解析URL
+            const encodedUrl = encodeURIComponent(url);
+            const parseUrl = interfaceData.url + encodedUrl;
+            
+            // 模拟解析延迟
+            setTimeout(() => {
+                hideLoading();
+                
+                // 更新状态
+                showStatus(`解析成功，正在播放来自 ${platform} 的视频`, 'success');
+                
+                // 添加到历史记录
+                addToHistory(url, platform, interfaceData.name);
+                
+                // 显示播放器
+                showPlayer(parseUrl);
+            }, 1500);
+        }
+        
+        // 显示播放器
+        function showPlayer(url) {
+            elements.videoPlayer.src = url;
+            elements.playerModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // 提高自定义鼠标层级，确保在播放器上方
+            const customCursor = document.getElementById('custom-cursor');
+            if (customCursor) {
+                customCursor.style.zIndex = '50';
+            }
+        }
+        
+        // 隐藏播放器
+        function hidePlayer() {
+            elements.videoPlayer.src = '';
+            elements.playerModal.classList.add('hidden');
+            document.body.style.overflow = '';
+            
+            // 恢复自定义鼠标层级
+            const customCursor = document.getElementById('custom-cursor');
+            if (customCursor) {
+                customCursor.style.zIndex = '';
+            }
+        }
+        
+        // 显示加载指示器
+        function showLoading(text = '加载中...') {
+            elements.loadingText.textContent = text;
+            elements.loadingIndicator.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // 隐藏加载指示器
+        function hideLoading() {
+            elements.loadingIndicator.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        // 显示状态信息
+        function showStatus(message, type = 'info') {
+            elements.statusLabel.textContent = message;
+            
+            // 设置状态颜色
+            elements.statusLabel.className = 'text-sm';
+            
+            switch (type) {
+                case 'success':
+                    elements.statusLabel.classList.add('text-success');
+                    break;
+                case 'error':
+                    elements.statusLabel.classList.add('text-danger');
+                    break;
+                case 'warning':
+                    elements.statusLabel.classList.add('text-warning');
+                    break;
+                default:
+                    elements.statusLabel.classList.add('text-muted', 'dark:text-gray-400');
+            }
+            
+            // 3秒后重置状态
+            setTimeout(() => {
+                elements.statusLabel.textContent = '就绪';
+                elements.statusLabel.className = 'text-sm text-muted dark:text-gray-400';
+            }, 3000);
+        }
+        
+        // 清空输入
+        function clearInput() {
+            elements.urlInput.value = '';
+            elements.urlInput.focus();
+        }
+        
+        // 切换历史记录模态框
+        function toggleHistoryModal() {
+            elements.historyModal.classList.toggle('hidden');
+            if (!elements.historyModal.classList.contains('hidden')) {
+                updateHistoryTable();
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        // 设置iframe鼠标事件处理
+            // 绑定事件监听器
+            function bindEventListeners() {
+                // 关闭播放器按钮
+                elements.closePlayer.addEventListener('click', hidePlayer);
+                
+                // 表单提交
+            elements.parseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const url = elements.urlInput.value.trim();
+                const interfaceId = elements.interfaceSelect.value;
+                parseAndPlay(url, interfaceId);
+            });
+            
+            // 清空按钮
+            elements.clearButton.addEventListener('click', clearInput);
+            
+            // 历史记录按钮
+            elements.historyButton.addEventListener('click', toggleHistoryModal);
+            elements.closeHistory.addEventListener('click', toggleHistoryModal);
+            elements.clearHistory.addEventListener('click', clearAllHistory);
+            
+
+            
+            // 刷新背景按钮
+            elements.refreshBgButton.addEventListener('click', function() {
+                showLoading('正在加载背景...');
+                loadBackgroundImage();
+                setTimeout(hideLoading, 1000);
+            });
+            
+
+            
+            // 播放器控制
+            elements.closePlayer.addEventListener('click', hidePlayer);
+            
+            // 主题切换
+            elements.themeToggle.addEventListener('click', function() {
+                appState.isDarkMode = !appState.isDarkMode;
+                updateTheme();
+            });
+            
+
+            
+            // 点击模态框背景关闭
+            elements.historyModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    toggleHistoryModal();
+                }
+            });
+            
+
+            
+            elements.playerModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hidePlayer();
+                }
+            });
+        }
+        
+        // 设置快捷键
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', function(e) {
+                // 回车键触发解析
+                if (e.key === 'Enter' && document.activeElement === elements.urlInput) {
+                    const url = elements.urlInput.value.trim();
+                    const interfaceId = elements.interfaceSelect.value;
+                    parseAndPlay(url, interfaceId);
+                }
+                
+                // ESC键关闭模态框或清空输入
+                    if (e.key === 'Escape') {
+                        if (!elements.historyModal.classList.contains('hidden')) {
+                            toggleHistoryModal();
+                        } else if (!elements.playerModal.classList.contains('hidden')) {
+                            hidePlayer();
+        
+                        } else if (!elements.loadingIndicator.classList.contains('hidden')) {
+                            hideLoading();
+                        } else {
+                            clearInput();
+                        }
+                    }
+                
+                // Ctrl+H 显示历史记录
+                if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+                    e.preventDefault();
+                    toggleHistoryModal();
+                }
+                
+
+            });
+        }
+        
+
+        
+        // 确保showStatus函数存在，用于显示消息提示
+        function showStatus(message, type = 'info') {
+            // 如果有statusLabel元素，使用它显示消息
+            if (elements.statusLabel) {
+                elements.statusLabel.textContent = message;
+                
+                // 设置样式
+                elements.statusLabel.className = 'text-sm transition-all duration-300';
+                
+                switch(type) {
+                    case 'success':
+                        elements.statusLabel.classList.add('text-success');
+                        break;
+                    case 'error':
+                        elements.statusLabel.classList.add('text-danger');
+                        break;
+                    case 'warning':
+                        elements.statusLabel.classList.add('text-warning');
+                        break;
+                    default:
+                        elements.statusLabel.classList.add('text-primary');
+                }
+                
+                // 3秒后隐藏消息
+                setTimeout(() => {
+                    elements.statusLabel.textContent = '';
+                    elements.statusLabel.className = 'text-sm transition-all duration-300';
+                }, 3000);
+            } else {
+                // 如果没有statusLabel元素，使用alert
+                alert(message);
+            }
+        }
+        
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+<script type="text/javascript" id="myhk" src="https://myhkw.cn/api/player/175372976857" key="175372976857" m="1"></script>
+<script src="https://unpkg.com/oh-my-live2d@latest"></script>
+<script>
+  OML2D.loadOml2d({
+    models: [
+      {
+        path: 'https://oneplus111.github.io/Nahida_1080/Nahida_1080.model3.json',
+        position: [0, 60],
+        scale: 0.08,
+        stageStyle: {
+          height: 450
+        }
+      }
+    ]
+  });
+</script>
+</body>
+</html>
